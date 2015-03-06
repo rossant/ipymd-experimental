@@ -4,8 +4,10 @@ from contextlib import contextmanager
 from pprint import pprint
 
 from odf.opendocument import OpenDocumentText, load
-from odf.style import Style, TextProperties
-from odf.text import H, P, Span, List, ListItem, ListStyle
+from odf.style import Style, TextProperties, ListLevelProperties
+from odf.text import (H, P, Span, List, ListItem,
+                      ListStyle, ListLevelStyleNumber,
+                      )
 
 
 # TODO
@@ -64,8 +66,6 @@ class ODFDocument(object):
         _add_styles(self._doc, self._styles)
         self._containers = []
 
-
-
     def clear(self):
         for child in self._doc.text.childNodes:
             self._doc.text.removeChild(child)
@@ -80,6 +80,7 @@ class ODFDocument(object):
     def start_container(self, cls, **kwargs):
         if 'stylename' in kwargs:
             kwargs['stylename'] = _get_style(kwargs['stylename'])
+        print(kwargs)
         container = cls(**kwargs)
         self._containers.append(container)
 
@@ -108,7 +109,7 @@ class ODFDocument(object):
         return len([c for c in self._containers
                    if 'list-item' in c.tagName])
 
-    def list(self):
+    def list(self, **kwargs):
         return self.container(List, **kwargs)
 
     def list_item(self):
