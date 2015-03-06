@@ -155,8 +155,8 @@ class BlockLexer(object):
         'list_block', 'block_html', 'table', 'paragraph', 'text'
     )
 
-    def __init__(self, rules=None, **kwargs):
-        self.tokens = []
+    def __init__(self, parser=None, rules=None, **kwargs):
+        self.parser = parser
         self.def_links = {}
         self.def_footnotes = {}
 
@@ -165,83 +165,61 @@ class BlockLexer(object):
 
         self.rules = rules
 
-    def __call__(self, text, rules=None):
-        return self.parse(text, rules)
+    def _manipulate(self, text, rules=None):
+        for key in rules:
+            rule = getattr(self.rules, key)
+            m = rule.match(text)
+            if not m:
+                continue
+            getattr(self, 'parse_%s' % key)(m)
+            return m
+        return False
 
-    def parse(self, text, rules=None):
+    def read(self, text, rules=None):
         text = text.rstrip('\n')
 
         if not rules:
             rules = self.default_rules
 
-        def manipulate(text):
-            for key in rules:
-                rule = getattr(self.rules, key)
-                m = rule.match(text)
-                if not m:
-                    continue
-                getattr(self, 'parse_%s' % key)(m)
-                return m
-            return False
-
         while text:
-            m = manipulate(text)
+            m = self._manipulate(text, rules)
             if m is not False:
                 text = text[len(m.group(0)):]
                 continue
             if text:
                 raise RuntimeError('Infinite loop at: %s' % text)
-        return self.tokens
 
     def parse_newline(self, m):
         length = len(m.group(0))
         if length > 1:
-            self.tokens.append({'type': 'newline'})
+            self.parser.newline()
 
     def parse_block_code(self, m):
         code = m.group(0)
         pattern = re.compile(r'^ {4}', re.M)
         code = pattern.sub('', code)
-        self.tokens.append({
-            'type': 'code',
-            'lang': None,
-            'text': code,
-        })
+        self.parser.code(code, lang=None)
 
     def parse_fences(self, m):
-        self.tokens.append({
-            'type': 'code',
-            'lang': m.group(2),
-            'text': m.group(3),
-        })
+        self.parser.code(m.group(3), lang=m.group(2))
 
     def parse_heading(self, m):
-        self.tokens.append({
-            'type': 'heading',
-            'level': len(m.group(1)),
-            'text': m.group(2),
-        })
+        self.parser.heading(m.group(2), level=len(m.group(1)))
 
     def parse_lheading(self, m):
         """Parse setext heading."""
-        self.tokens.append({
-            'type': 'heading',
-            'level': 1 if m.group(2) == '=' else 2,
-            'text': m.group(1),
-        })
+        level = 1 if m.group(2) == '=' else 2
+        self.parser.heading(m.group(1), level=level)
 
     def parse_hrule(self, m):
-        self.tokens.append({'type': 'hrule'})
+        self.parser.hrule()
 
     def parse_list_block(self, m):
         bull = m.group(2)
-        self.tokens.append({
-            'type': 'list_start',
-            'ordered': '.' in bull,
-        })
+        self.parser.list_start(ordered='.')
         cap = m.group(0)
         self._process_list_item(cap, bull)
-        self.tokens.append({'type': 'list_end'})
+        self.parser.list_end()
 
     def _process_list_item(self, cap, bull):
         cap = self.rules.list_item.findall(cap)
@@ -274,22 +252,21 @@ class BlockLexer(object):
                     loose = _next
 
             if loose:
-                t = 'loose_item_start'
+                self.parser.loose_item_start()
             else:
-                t = 'list_item_start'
+                self.parser.list_item_start()
 
-            self.tokens.append({'type': t})
             # recurse
-            self.parse(item, self.list_rules)
-            self.tokens.append({'type': 'list_item_end'})
+            self.read(item, self.list_rules)
+            self.parser.list_item_end()
 
     def parse_block_quote(self, m):
-        self.tokens.append({'type': 'block_quote_start'})
+        self.parser.block_quote_start()
         cap = m.group(0)
         pattern = re.compile(r'^ *> ?', flags=re.M)
         cap = pattern.sub('', cap)
-        self.parse(cap)
-        self.tokens.append({'type': 'block_quote_end'})
+        self.read(cap)
+        self.parser.block_quote_end()
 
     def parse_def_links(self, m):
         key = _keyify(m.group(1))
@@ -306,10 +283,7 @@ class BlockLexer(object):
 
         self.def_footnotes[key] = 0
 
-        self.tokens.append({
-            'type': 'footnote_start',
-            'key': key,
-        })
+        self.parser.footnote_start(key)
 
         text = m.group(2)
 
@@ -325,12 +299,9 @@ class BlockLexer(object):
                 newlines.append(line[whitespace:])
             text = '\n'.join(newlines)
 
-        self.parse(text, self.footnote_rules)
+        self.read(text, self.footnote_rules)
 
-        self.tokens.append({
-            'type': 'footnote_end',
-            'key': key,
-        })
+        self.parser.footnote_end(key)
 
     def parse_table(self, m):
         item = self._process_table(m)
@@ -342,7 +313,7 @@ class BlockLexer(object):
             cells[i] = re.split(r' *\| *', v)
 
         item['cells'] = cells
-        self.tokens.append(item)
+        self.parser.table(item)
 
     def parse_nptable(self, m):
         item = self._process_table(m)
@@ -353,7 +324,7 @@ class BlockLexer(object):
             cells[i] = re.split(r' *\| *', v)
 
         item['cells'] = cells
-        self.tokens.append(item)
+        self.parser.nptable(item)
 
     def _process_table(self, m):
         header = re.sub(r'^ *| *\| *$', '', m.group(1))
@@ -381,20 +352,76 @@ class BlockLexer(object):
     def parse_block_html(self, m):
         pre = m.group(1) in ['pre', 'script', 'style']
         text = m.group(0)
-        self.tokens.append({
-            'type': 'block_html',
-            'pre': pre,
-            'text': text
-        })
+        self.parser.block_html(text, pre=pre)
 
     def parse_paragraph(self, m):
         text = m.group(1).rstrip('\n')
-        self.tokens.append({'type': 'paragraph', 'text': text})
+        self.parser.paragraph(text)
 
     def parse_text(self, m):
         text = m.group(0)
-        self.tokens.append({'type': 'text', 'text': text})
+        self.parser.text(text)
 
+
+class BaseBlockParser(object):
+    def block_html(self, text, pre=None):
+        print('block_html', text, pre)
+
+    def block_quote_start(self, ):
+        print('block_quote_start', )
+
+    def block_quote_end(self, ):
+        print('block_quote_end', )
+
+    def footnote_start(self, key):
+        print('footnote_start', key)
+
+    def footnote_end(self, key):
+        print('footnote_end', key)
+
+    def heading(self, text, level=None):
+        print('heading', text, level)
+
+    def hrule(self, ):
+        print('hrule', )
+
+    def list_start(self, ordered=False):
+        print('list_start', ordered)
+
+    def list_end(self, ):
+        print('list_end', )
+
+    def list_item_start(self, ):
+        print('list_item_start', )
+
+    def loose_item_start(self, ):
+        print('loose_item_start', )
+
+    def list_item_end(self, ):
+        print('list_item_end', )
+
+    def newline(self, ):
+        print('newline', )
+
+    def paragraph(self, text):
+        print('paragraph', text)
+
+    def table(self, item):
+        print('table', item)
+
+    def nptable(self, item):
+        print('nptable', item)
+
+    def code(self, code, lang=None):
+        print('code', code, lang)
+
+    def text(self, text):
+        print('text', text)
+
+
+# -----------------------------------------------------------------------------
+# Inline parser
+# -----------------------------------------------------------------------------
 
 class InlineGrammar(object):
     """Grammars for inline level tokens."""
@@ -486,8 +513,8 @@ class InlineLexer(object):
             if not m:
                 continue
             self.line_match = m
-            out = getattr(self, 'parse_%s' % key)(m)
-            return m, out
+            getattr(self, 'parse_%s' % key)(m)
+            return m
         return False
 
     def read(self, text, rules=None):
@@ -501,7 +528,7 @@ class InlineLexer(object):
             ret = self._manipulate(text, rules=rules)
             self.line_started = True
             if ret is not False:
-                m, out = ret
+                m = ret
                 text = text[len(m.group(0)):]
                 continue
             if text:
@@ -631,7 +658,26 @@ class BaseInlineParser(object):
 
 
 if __name__ == '__main__':
-    parser = BaseInlineParser()
+    # parser = BaseInlineParser()
+    # lexer = InlineLexer(parser)
+    # lexer.read("**Hello** *world*, how are you?")
 
-    lexer = InlineLexer(parser)
-    lexer.read("**Hello** *world*, how are you?")
+
+    parser = BaseBlockParser()
+    lexer = BlockLexer(parser)
+    lexer.read("""**Hello** *world*, how are you?
+Good and you.
+
+New paragraph.
+
+Here is a list:
+
+* first item
+* second item
+
+Here is a numbered list:
+1. first item
+2. second item
+
+
+""")
