@@ -22,6 +22,16 @@ def _add_styles(doc, styles):
     for style in sorted(styles):
         doc.styles.addElement(styles[style])
 
+def _get_paragraph_style(level):
+    if level == 0:
+        return 'Normal'
+    elif level == 1:
+        return 'Bullet'
+    elif level >= 2:
+        return 'Bullet within bullet'
+    else:
+        return ValueError("level", level)
+
 class ODFDocument(object):
     def __init__(self, path, template_path, overwrite=False):
         if op.exists(path):
@@ -57,8 +67,14 @@ class ODFDocument(object):
             parent = self._doc.text
         parent.addElement(container)
 
-    def paragraph(self, style='Normal'):
+    def paragraph(self, style=None):
+        if style is None:
+            style = _get_paragraph_style(self.item_level)
         return self.container(P, stylename=self._styles[style])
+
+    @property
+    def item_level(self):
+        return len([c for c in self._containers if 'list-item' in c.tagName])
 
     def list(self):
         return self.container(List)
