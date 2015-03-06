@@ -1,4 +1,4 @@
-from opendocument import ODFDocument, List, ListItem
+from opendocument import ODFDocument, List, ListItem, ListStyle
 from markdown_utils import (BlockLexer, BaseBlockRenderer,
                             InlineLexer, BaseInlineRenderer)
 
@@ -7,6 +7,7 @@ class ODFBlockRenderer(BaseBlockRenderer):
     def __init__(self, doc, inline_lexer=None):
         self._doc = doc
         self._inline_lexer = inline_lexer
+        self._in_ordered_list = False
 
     def block_html(self, text, pre=None):
         self.paragraph(text)
@@ -24,6 +25,7 @@ class ODFBlockRenderer(BaseBlockRenderer):
         pass
 
     def list_start(self, ordered=False):
+        self._in_ordered_list = ordered
         self._doc.start_container(List)
 
     def list_end(self):
@@ -49,7 +51,7 @@ class ODFBlockRenderer(BaseBlockRenderer):
         self.text(text)
 
     def text(self, text):
-        with self._doc.paragraph():
+        with self._doc.paragraph(ordered=self._in_ordered_list):
             self._inline_lexer.read(text)
 
 
