@@ -15,10 +15,10 @@ class ODFBlockRenderer(BaseBlockRenderer):
         self._doc.start_quote()
 
     def block_quote_end(self):
-        self._doc.end_container()
+        self._doc.end_quote()
 
     def heading(self, text, level=None):
-        self.add_heading(text, level)
+        self._doc.heading(text, level)
 
     def list_start(self, ordered=False):
         if ordered:
@@ -27,7 +27,7 @@ class ODFBlockRenderer(BaseBlockRenderer):
             self._doc.start_list()
 
     def list_end(self):
-        self._doc.end_container()
+        self._doc.end_list()
 
     def list_item_start(self):
         self._doc.start_list_item()
@@ -36,7 +36,7 @@ class ODFBlockRenderer(BaseBlockRenderer):
         self._doc.start_list_item()
 
     def list_item_end(self):
-        self._doc.end_container()
+        self._doc.end_list_item()
 
     def code(self, code, lang=None):
         self._doc.code(code)
@@ -81,7 +81,9 @@ class ODFInlineRenderer(BaseInlineRenderer):
         self._doc.text(text)
 
 
-text = """**Hello** *world*, how are you? Good and you.
+text = """# Chapter 1
+
+**Hello** *world*, how are you? Good and you.
 
 New paragraph.
 
@@ -95,6 +97,26 @@ Here is a numbered list:
 2. second item
 
 Go to [this link](http://hello.com), it is very good!
+
+```
+>>> print("hello world")
+hello world
+```
+
+TODO: line break within code
+
+```python
+>>> print("hello world")
+hello world
+```
+
+```javascript
+console.log();
+```
+
+> TIP (Some text): This is cool!
+
+    code again
 
 """
 

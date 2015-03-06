@@ -35,16 +35,17 @@ def _style_name(el):
     return el.attributes.get(_STYLE_NAME, '').strip()
 
 
-def _remove_packt_style_name(style):
-    style.attributes[_STYLE_NAME] = style.attributes[_STYLE_NAME]. \
-                                    replace(' [PACKT]', '')
-    return style
+# def _remove_packt_style_name(style):
+#     style.attributes[_STYLE_NAME] = style.attributes[_STYLE_NAME]. \
+#                                     replace(' [PACKT]', '')
+#     return style
 
 
 def _packt_styles(template_path):
     f = load(template_path)
-    return {_style_name(style).replace(' [PACKT]', ''):
-            _remove_packt_style_name(style)
+    return {_style_name(style):#.replace(' [PACKT]', ''):
+            # _remove_packt_style_name(style)
+            style
             for style in f.styles.childNodes
             if '[PACKT]' in _style_name(style)
             or 'Heading' in _style_name(style)
@@ -57,7 +58,7 @@ def _add_styles(doc, styles):
 
 
 def _add_numbered_style(doc):
-    style = ListStyle(name='numbered')
+    style = ListStyle(name='_numbered_list')
 
     lls = ListLevelStyleNumber(level=1)
 
@@ -86,16 +87,20 @@ def _add_numbered_style(doc):
 
 def _get_paragraph_style(level, ordered=None):
     if level == 0:
-        return 'Normal'
+        return 'Normal [PACKT]'
     elif level == 1:
         if ordered:
-            return 'Numbered Bullet'
+            return 'Numbered Bullet [PACKT]'
         else:
-            return 'Bullet'
+            return 'Bullet [PACKT]'
     elif level >= 2:
-        return 'Bullet within bullet'
+        return 'Bullet within bullet [PACKT]'
     else:
         return ValueError("level", level)
+
+
+def _is_paragraph(el):
+    return el.tagName == 'text:p'
 
 
 class ODFDocument(object):
@@ -124,7 +129,7 @@ class ODFDocument(object):
         return len([c for c in self._containers
                    if 'list-item' in c.tagName])
 
-    def add_heading(self, text, level):
+    def heading(self, text, level):
         assert level in range(1, 7)
         # style = self._styles['Heading {0:d}'.format(level)]
         style = ('Heading {0:d}'.format(level))
@@ -159,13 +164,18 @@ class ODFDocument(object):
 
     @contextmanager
     def paragraph(self, style=None):
-        self.start_paragraph(style=style)
-        yield
-        self.end_container()
+        # Do not create a new paragraph if there is already one active.
+        if self._containers and _is_paragraph(self._containers[-1]):
+            yield
+        # Create a new paragraph if needed.
+        else:
+            self.start_paragraph(style=style)
+            yield
+            self.end_container()
 
     def start_numbered_list(self):
         self._ordered = True
-        self.start_container(List, stylename='numbered')
+        self.start_container(List, stylename='_numbered_list')
 
     def end_numbered_list(self):
         self.end_container()
@@ -185,32 +195,35 @@ class ODFDocument(object):
         self.end_container()
 
     def code(self, text):
-        with self.paragraph(style='Code'):
+        with self.paragraph(style='Code [PACKT]'):
             self.text(text)
 
     def start_quote(self):
-        self.start_paragraph(style='Quote')
+        self.start_paragraph(style='Quote [PACKT]')
 
-    def quote(self, text):
-        with self.paragraph(style='Quote'):
-            self.text(text)
+    def end_quote(self):
+        self.end_container()
 
-    def text(self, text, style='Normal'):
+    # def quote(self, text):
+    #     with self.paragraph(style='Quote [PACKT]'):
+    #         self.text(text)
+
+    def text(self, text, style='Normal [PACKT]'):
         assert self._containers
         container = self._containers[-1]
         container.addElement(Span(stylename=style, text=text))
 
     def link(self, url):
-        self.text(url, style='URL')
+        self.text(url, style='URL [PACKT]')
 
     def bold(self, text):
-        self.text(text, style='Bold')
+        self.text(text, style='Bold [PACKT]')
 
     def inline_code(self, text):
-        self.text(text, style='Code In Text')
+        self.text(text, style='Code In Text [PACKT]')
 
     def italics(self, text):
-        self.text(text, style='Italics')
+        self.text(text, style='Italics [PACKT]')
 
     @property
     def styles(self):
