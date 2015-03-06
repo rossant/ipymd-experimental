@@ -44,6 +44,13 @@ def _get_paragraph_style(level, ordered=None):
         return ValueError("level", level)
 
 
+def _get_style(stylename):
+    if isinstance(stylename, string_types):
+        if not stylename.endswith(' [PACKT]'):
+            return stylename + ' [PACKT]'
+    return stylename
+
+
 class ODFDocument(object):
     def __init__(self, path, template_path, overwrite=False):
         if op.exists(path):
@@ -57,11 +64,7 @@ class ODFDocument(object):
         _add_styles(self._doc, self._styles)
         self._containers = []
 
-    def _get_style(self, stylename):
-        if isinstance(stylename, string_types):
-            if not stylename.endswith(' [PACKT]'):
-                return stylename + ' [PACKT]'
-        return stylename
+
 
     def clear(self):
         for child in self._doc.text.childNodes:
@@ -70,13 +73,13 @@ class ODFDocument(object):
     def add_heading(self, text, level):
         assert level in range(1, 7)
         # style = self._styles['Heading {0:d}'.format(level)]
-        style = self._get_style('Heading {0:d}'.format(level))
+        style = _get_style('Heading {0:d}'.format(level))
         h = H(outlinelevel=level, stylename=style, text=text)
         self._doc.text.addElement(h)
 
     def start_container(self, cls, **kwargs):
         if 'stylename' in kwargs:
-            kwargs['stylename'] = self._get_style(kwargs['stylename'])
+            kwargs['stylename'] = _get_style(kwargs['stylename'])
         container = cls(**kwargs)
         self._containers.append(container)
 
@@ -97,7 +100,7 @@ class ODFDocument(object):
     def paragraph(self, style=None, ordered=False):
         if style is None:
             style = _get_paragraph_style(self.item_level, ordered)
-        style = self._get_style(style)
+        style = _get_style(style)
         return self.container(P, stylename=style)
 
     @property
@@ -115,7 +118,7 @@ class ODFDocument(object):
         assert self._containers
         container = self._containers[-1]
         # style = self._styles[style]
-        style = self._get_style(style)
+        style = _get_style(style)
         container.addElement(Span(stylename=style, text=text))
 
     @property
