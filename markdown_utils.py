@@ -1,6 +1,16 @@
 # -*- coding: utf-8 -*-
 
-"""Markdown parsers."""
+"""Markdown parsers.
+
+The code has been adapted from the mistune library:
+
+    mistune
+    https://github.com/lepture/mistune/
+
+    The fastest markdown parser in pure Python with renderer feature.
+    :copyright: (c) 2014 - 2015 by Hsiaoming Yang.
+
+"""
 
 
 # -----------------------------------------------------------------------------
@@ -30,7 +40,7 @@ def _keyify(key):
 
 
 # -----------------------------------------------------------------------------
-# Block parser
+# Block renderer
 # -----------------------------------------------------------------------------
 
 _tag = (
@@ -141,8 +151,8 @@ class BlockLexer(object):
         'list_block', 'block_html', 'table', 'paragraph', 'text'
     )
 
-    def __init__(self, parser=None, rules=None, **kwargs):
-        self.parser = parser
+    def __init__(self, renderer=None, rules=None, **kwargs):
+        self.renderer = renderer
         self.def_links = {}
         self.def_footnotes = {}
 
@@ -178,34 +188,34 @@ class BlockLexer(object):
     def parse_newline(self, m):
         length = len(m.group(0))
         if length > 1:
-            self.parser.newline()
+            self.renderer.newline()
 
     def parse_block_code(self, m):
         code = m.group(0)
         pattern = re.compile(r'^ {4}', re.M)
         code = pattern.sub('', code)
-        self.parser.code(code, lang=None)
+        self.renderer.code(code, lang=None)
 
     def parse_fences(self, m):
-        self.parser.code(m.group(3), lang=m.group(2))
+        self.renderer.code(m.group(3), lang=m.group(2))
 
     def parse_heading(self, m):
-        self.parser.heading(m.group(2), level=len(m.group(1)))
+        self.renderer.heading(m.group(2), level=len(m.group(1)))
 
     def parse_lheading(self, m):
         """Parse setext heading."""
         level = 1 if m.group(2) == '=' else 2
-        self.parser.heading(m.group(1), level=level)
+        self.renderer.heading(m.group(1), level=level)
 
     def parse_hrule(self, m):
-        self.parser.hrule()
+        self.renderer.hrule()
 
     def parse_list_block(self, m):
         bull = m.group(2)
-        self.parser.list_start(ordered='.')
+        self.renderer.list_start(ordered='.' in bull)
         cap = m.group(0)
         self._process_list_item(cap, bull)
-        self.parser.list_end()
+        self.renderer.list_end()
 
     def _process_list_item(self, cap, bull):
         cap = self.rules.list_item.findall(cap)
@@ -238,21 +248,21 @@ class BlockLexer(object):
                     loose = _next
 
             if loose:
-                self.parser.loose_item_start()
+                self.renderer.loose_item_start()
             else:
-                self.parser.list_item_start()
+                self.renderer.list_item_start()
 
             # recurse
             self.read(item, self.list_rules)
-            self.parser.list_item_end()
+            self.renderer.list_item_end()
 
     def parse_block_quote(self, m):
-        self.parser.block_quote_start()
+        self.renderer.block_quote_start()
         cap = m.group(0)
         pattern = re.compile(r'^ *> ?', flags=re.M)
         cap = pattern.sub('', cap)
         self.read(cap)
-        self.parser.block_quote_end()
+        self.renderer.block_quote_end()
 
     def parse_def_links(self, m):
         key = _keyify(m.group(1))
@@ -269,7 +279,7 @@ class BlockLexer(object):
 
         self.def_footnotes[key] = 0
 
-        self.parser.footnote_start(key)
+        self.renderer.footnote_start(key)
 
         text = m.group(2)
 
@@ -287,7 +297,7 @@ class BlockLexer(object):
 
         self.read(text, self.footnote_rules)
 
-        self.parser.footnote_end(key)
+        self.renderer.footnote_end(key)
 
     def parse_table(self, m):
         item = self._process_table(m)
@@ -299,7 +309,7 @@ class BlockLexer(object):
             cells[i] = re.split(r' *\| *', v)
 
         item['cells'] = cells
-        self.parser.table(item)
+        self.renderer.table(item)
 
     def parse_nptable(self, m):
         item = self._process_table(m)
@@ -310,7 +320,7 @@ class BlockLexer(object):
             cells[i] = re.split(r' *\| *', v)
 
         item['cells'] = cells
-        self.parser.nptable(item)
+        self.renderer.nptable(item)
 
     def _process_table(self, m):
         header = re.sub(r'^ *| *\| *$', '', m.group(1))
@@ -338,75 +348,93 @@ class BlockLexer(object):
     def parse_block_html(self, m):
         pre = m.group(1) in ['pre', 'script', 'style']
         text = m.group(0)
-        self.parser.block_html(text, pre=pre)
+        self.renderer.block_html(text, pre=pre)
 
     def parse_paragraph(self, m):
         text = m.group(1).rstrip('\n')
-        self.parser.paragraph(text)
+        self.renderer.paragraph(text)
 
     def parse_text(self, m):
         text = m.group(0)
-        self.parser.text(text)
+        self.renderer.text(text)
 
 
-class BaseBlockParser(object):
+class BaseBlockRenderer(object):
     def block_html(self, text, pre=None):
-        print('block_html', text, pre)
+        # print('block_html', text, pre)
+        pass
 
-    def block_quote_start(self, ):
-        print('block_quote_start', )
+    def block_quote_start(self):
+        # print('block_quote_start', )
+        pass
 
-    def block_quote_end(self, ):
-        print('block_quote_end', )
+    def block_quote_end(self):
+        # print('block_quote_end', )
+        pass
 
     def footnote_start(self, key):
-        print('footnote_start', key)
+        # print('footnote_start', key)
+        pass
 
     def footnote_end(self, key):
-        print('footnote_end', key)
+        # print('footnote_end', key)
+        pass
 
     def heading(self, text, level=None):
-        print('heading', text, level)
+        # print('heading', text, level)
+        pass
 
-    def hrule(self, ):
-        print('hrule', )
+    def hrule(self):
+        # print('hrule', )
+        pass
 
     def list_start(self, ordered=False):
-        print('list_start', ordered)
+        # print('list_start', ordered)
+        pass
 
-    def list_end(self, ):
-        print('list_end', )
+    def list_end(self):
+        # print('list_end', )
+        pass
 
-    def list_item_start(self, ):
-        print('list_item_start', )
+    def list_item_start(self):
+        # print('list_item_start', )
+        pass
 
-    def loose_item_start(self, ):
-        print('loose_item_start', )
+    def loose_item_start(self):
+        # print('loose_item_start', )
+        pass
 
-    def list_item_end(self, ):
-        print('list_item_end', )
+    def list_item_end(self):
+        # print('list_item_end', )
+        pass
 
-    def newline(self, ):
-        print('newline', )
+    def newline(self):
+        # print('newline', )
+        pass
 
     def table(self, item):
-        print('table', item)
+        # print('table', item)
+        pass
 
     def nptable(self, item):
-        print('nptable', item)
+        # print('nptable', item)
+        pass
 
     def code(self, code, lang=None):
-        print('code', code, lang)
+        # print('code', code, lang)
+        pass
 
     def paragraph(self, text):
-        print('paragraph', text)
+        # print('paragraph', text)
+        pass
 
     def text(self, text):
-        print('text', text)
+        # print('text', text)
+        pass
 
 
 # -----------------------------------------------------------------------------
-# Inline parser
+# Inline renderer
 # -----------------------------------------------------------------------------
 
 class InlineGrammar(object):
@@ -470,11 +498,11 @@ class InlineLexer(object):
         'linebreak', 'strikethrough', 'text',
     ]
 
-    def __init__(self, parser, rules=None, **kwargs):
+    def __init__(self, renderer, rules=None, **kwargs):
         self.links = {}
         self.footnotes = {}
         self.footnote_index = 0
-        self.parser = parser
+        self.renderer = renderer
 
         if not rules:
             rules = self.grammar_class()
@@ -521,7 +549,7 @@ class InlineLexer(object):
                 raise RuntimeError('Infinite loop at: %s' % text)
 
     def parse_escape(self, m):
-        self.parser.text(m.group(1))
+        self.renderer.text(m.group(1))
 
     def parse_autolink(self, m):
         link = m.group(1)
@@ -529,13 +557,13 @@ class InlineLexer(object):
             is_email = True
         else:
             is_email = False
-        self.parser.autolink(link, is_email)
+        self.renderer.autolink(link, is_email)
 
     def parse_url(self, m):
         link = m.group(1)
         if self._in_link:
-            self.parser.text(link)
-        self.parser.autolink(link, False)
+            self.renderer.text(link)
+        self.renderer.autolink(link, False)
 
     def parse_tag(self, m):
         text = m.group(0)
@@ -544,7 +572,7 @@ class InlineLexer(object):
             self._in_link = True
         if lower_text.startswith('</a>'):
             self._in_link = False
-        self.parser.tag(text)
+        self.renderer.tag(text)
 
     def parse_footnote(self, m):
         key = _keyify(m.group(1))
@@ -554,7 +582,7 @@ class InlineLexer(object):
             return
         self.footnote_index += 1
         self.footnotes[key] = self.footnote_index
-        self.parser.footnote_ref(key, self.footnote_index)
+        self.renderer.footnote_ref(key, self.footnote_index)
 
     def parse_link(self, m):
         self._process_link(m, m.group(2), m.group(3))
@@ -577,93 +605,77 @@ class InlineLexer(object):
         line = m.group(0)
         text = m.group(1)
         if line[0] == '!':
-            self.parser.image(link, title, text)
+            self.renderer.image(link, title, text)
             return
         # self._in_link = True
         # NOTE: could recurse here with text
         self._in_link = False
-        self.parser.link(link, title, text)
+        self.renderer.link(link, title, text)
 
     def parse_double_emphasis(self, m):
         text = m.group(2) or m.group(1)
         # NOTE: could recurse here with text
-        self.parser.double_emphasis(text)
+        self.renderer.double_emphasis(text)
 
     def parse_emphasis(self, m):
         text = m.group(2) or m.group(1)
         # NOTE: could recurse here with text
-        self.parser.emphasis(text)
+        self.renderer.emphasis(text)
 
     def parse_code(self, m):
         text = m.group(2)
-        self.parser.codespan(text)
+        self.renderer.codespan(text)
 
     def parse_linebreak(self, m):
-        self.parser.linebreak()
+        self.renderer.linebreak()
 
     def parse_strikethrough(self, m):
         text = m.group(1)
         # NOTE: could recurse here with text
-        self.parser.strikethrough(text)
+        self.renderer.strikethrough(text)
 
     def parse_text(self, m):
         text = m.group(0)
-        self.parser.text(text)
+        self.renderer.text(text)
 
 
-class BaseInlineParser(object):
+class BaseInlineRenderer(object):
     def autolink(self, link, is_email=False):
-        print("autolink", link, is_email)
+        # print("autolink", link, is_email)
+        pass
 
     def codespan(self, text):
-        print("codespan", text)
+        # print("codespan", text)
+        pass
 
     def double_emphasis(self, text):
-        print('double_emphasis', text)
+        # print('double_emphasis', text)
+        pass
 
     def emphasis(self, text):
-        print('emphasis', text)
+        # print('emphasis', text)
+        pass
 
     def image(self, src, title, alt_text):
-        print('image', src, title, alt_text)
+        # print('image', src, title, alt_text)
+        pass
 
     def linebreak(self):
-        print('linebreak')
+        # print('linebreak')
+        pass
 
     def link(self, link, title, content):
-        print('link', link, title, content)
+        # print('link', link, title, content)
+        pass
 
     def tag(self, html):
-        print('tag', html)
+        # print('tag', html)
+        pass
 
     def strikethrough(self, text):
-        print('strikethrough', text)
+        # print('strikethrough', text)
+        pass
 
     def text(self, text):
-        print('text', text)
-
-
-if __name__ == '__main__':
-    # parser = BaseInlineParser()
-    # lexer = InlineLexer(parser)
-    # lexer.read("**Hello** *world*, how are you?")
-
-
-    parser = BaseBlockParser()
-    lexer = BlockLexer(parser)
-    lexer.read("""**Hello** *world*, how are you?
-Good and you.
-
-New paragraph.
-
-Here is a list:
-
-* first item, see the link at http://google.com.
-* second *item* in italics.
-
-Here is a numbered list:
-1. first item
-2. second item
-
-
-""")
+        # print('text', text)
+        pass

@@ -7,8 +7,10 @@ from odf.opendocument import OpenDocumentText, load
 from odf.style import Style, TextProperties
 from odf.text import H, P, Span, List, ListItem
 
+
 def _style_name(el):
     return el.attributes.get(('urn:oasis:names:tc:opendocument:xmlns:style:1.0', 'display-name'), '').strip()
+
 
 def _packt_styles(template_path):
     f = load(template_path)
@@ -18,9 +20,11 @@ def _packt_styles(template_path):
             or 'Heading' in _style_name(style)
             }
 
+
 def _add_styles(doc, styles):
     for style in sorted(styles):
         doc.styles.addElement(styles[style])
+
 
 def _get_paragraph_style(level):
     if level == 0:
@@ -31,6 +35,7 @@ def _get_paragraph_style(level):
         return 'Bullet within bullet'
     else:
         return ValueError("level", level)
+
 
 class ODFDocument(object):
     def __init__(self, path, template_path, overwrite=False):
@@ -55,26 +60,43 @@ class ODFDocument(object):
         h = H(outlinelevel=level, stylename=style, text=text)
         self._doc.text.addElement(h)
 
-    @contextmanager
-    def container(self, cls, **kwargs):
+    def start_container(self, cls, **kwargs):
+        if 'stylename' in kwargs:
+            kwargs['stylename'] = self._styles[kwargs['stylename']]
         container = cls(**kwargs)
         self._containers.append(container)
-        yield
-        self._containers.pop()
+
+    def end_container(self):
+        container = self._containers.pop()
         if len(self._containers) >= 1:
             parent = self._containers[-1]
         else:
             parent = self._doc.text
         parent.addElement(container)
 
+    @contextmanager
+    def container(self, cls, **kwargs):
+        # container = cls(**kwargs)
+        # self._containers.append(container)
+        self.start_container(cls, **kwargs)
+        yield
+        self.end_container()
+        # self._containers.pop()
+        # if len(self._containers) >= 1:
+        #     parent = self._containers[-1]
+        # else:
+        #     parent = self._doc.text
+        # parent.addElement(container)
+
     def paragraph(self, style=None):
         if style is None:
             style = _get_paragraph_style(self.item_level)
-        return self.container(P, stylename=self._styles[style])
+        return self.container(P, stylename=style)
 
     @property
     def item_level(self):
-        return len([c for c in self._containers if 'list-item' in c.tagName])
+        return len([c for c in self._containers
+                   if 'list-item' in c.tagName])
 
     def list(self):
         return self.container(List)
