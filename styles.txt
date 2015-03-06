@@ -1,0 +1,48 @@
+Bold
+Bullet
+Bullet End
+Bullet within bullet
+Bullet within bullet end
+Bullet without Bullet
+Chapter Number
+Chapter Title
+Code
+Code End
+Code Highlighted
+Code Highlighted End
+Code In Text
+Code listing
+Command Line
+Figure
+Figure Char
+Header/Footer
+Heading 1
+Heading 1 Char
+Heading 2
+Heading 3
+Heading 3 Char
+Heading 4
+Heading 4 Char
+Heading 5
+Heading 6
+Indent
+Information Box
+Information Box Char
+Internal Note
+Italics
+Key
+Key Word
+Layout Information
+Normal
+Normal Char
+Numbered Bullet
+Numbered Bullet End
+Quote
+Screen Text
+Table Column Heading
+Table Content
+Table Contents
+Tip
+Tip Heading
+Tip without heading
+UR

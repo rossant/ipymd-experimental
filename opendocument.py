@@ -35,6 +35,10 @@ class ODFDocument(object):
         _add_styles(self._doc, self._styles)
         self._containers = []
 
+    def clear(self):
+        for child in self._doc.text.childNodes:
+            self._doc.text.removeChild(child)
+
     def add_heading(self, text, level):
         assert level in range(1, 7)
         style = self._styles['Heading {0:d}'.format(level)]
@@ -62,39 +66,18 @@ class ODFDocument(object):
     def list_item(self):
         return self.container(ListItem)
 
-    def add_text(self, text, style_name):
+    def add_text(self, text, style='Normal'):
         assert self._containers
         container = self._containers[-1]
-        style = self._styles[style_name]
+        style = self._styles[style]
         container.addElement(Span(stylename=style, text=text))
+
+    @property
+    def styles(self):
+        return self._styles
 
     def show_styles(self):
         pprint(self._styles)
 
     def save(self):
         self._doc.save(self._path)
-
-doc_path = 'test.odf'
-template_path = 'styles.ott'
-
-doc = ODFDocument(doc_path, template_path, overwrite=True)
-
-doc.show_styles()
-
-doc.add_heading("The title", 1)
-with doc.paragraph():
-    doc.add_text("Some text. ", "Normal")
-    doc.add_text("This is bold. ", "Bold")
-
-with doc.list():
-    with doc.list_item():
-        with doc.paragraph(style='Bullet'):
-            doc.add_text("Item 1.", "Bullet")
-    """with doc.list_item():
-        with doc.paragraph():
-            doc.add_text("Item 2.", "Bullet")
-    with doc.list_item():
-        with doc.paragraph():
-            doc.add_text("Item 3.", "Bullet End")"""
-
-doc.save()
