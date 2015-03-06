@@ -457,10 +457,11 @@ class InlineLexer(object):
         'linebreak', 'strikethrough', 'text',
     ]
 
-    def __init__(self, rules=None, **kwargs):
+    def __init__(self, parser, rules=None, **kwargs):
         self.links = {}
         self.footnotes = {}
         self.footnote_index = 0
+        self.parser = parser
 
         if not rules:
             rules = self.grammar_class()
@@ -501,14 +502,13 @@ class InlineLexer(object):
             self.line_started = True
             if ret is not False:
                 m, out = ret
-                # yield out
                 text = text[len(m.group(0)):]
                 continue
             if text:
                 raise RuntimeError('Infinite loop at: %s' % text)
 
     def parse_escape(self, m):
-        return m.group(1)
+        self.parser.text(m.group(1))
 
     def parse_autolink(self, m):
         link = m.group(1)
@@ -516,15 +516,13 @@ class InlineLexer(object):
             is_email = True
         else:
             is_email = False
-        # return self.renderer.autolink(link, is_email)
+        self.parser.autolink(link, is_email)
 
     def parse_url(self, m):
         link = m.group(1)
         if self._in_link:
-            # TODO
-            pass
-            # return self.renderer.text(link)
-        # return self.renderer.autolink(link, False)
+            self.parser.text(link)
+        self.parser.autolink(link, False)
 
     def parse_tag(self, m):
         text = m.group(0)
@@ -533,76 +531,107 @@ class InlineLexer(object):
             self._in_link = True
         if lower_text.startswith('</a>'):
             self._in_link = False
-        # return self.renderer.tag(text)
+        self.parser.tag(text)
 
     def parse_footnote(self, m):
         key = _keyify(m.group(1))
         if key not in self.footnotes:
-            return None
+            return
         if self.footnotes[key]:
-            return None
+            return
         self.footnote_index += 1
         self.footnotes[key] = self.footnote_index
-        # return self.renderer.footnote_ref(key, self.footnote_index)
+        self.parser.footnote_ref(key, self.footnote_index)
 
     def parse_link(self, m):
-        return self._process_link(m, m.group(2), m.group(3))
+        self._process_link(m, m.group(2), m.group(3))
 
     def parse_reflink(self, m):
         key = _keyify(m.group(2) or m.group(1))
         if key not in self.links:
-            return None
+            return
         ret = self.links[key]
-        return self._process_link(m, ret['link'], ret['title'])
+        self._process_link(m, ret['link'], ret['title'])
 
     def parse_nolink(self, m):
         key = _keyify(m.group(1))
         if key not in self.links:
-            return None
+            return
         ret = self.links[key]
-        return self._process_link(m, ret['link'], ret['title'])
+        self._process_link(m, ret['link'], ret['title'])
 
     def _process_link(self, m, link, title=None):
         line = m.group(0)
         text = m.group(1)
         if line[0] == '!':
-            # TODO: image
-            pass
-            # return self.renderer.image(link, title, text)
-
+            self.parser.image(link, title, text)
+            return
         # self._in_link = True
         # text = self.output(text)
         self._in_link = False
-        # TODO: link
-        # return self.renderer.link(link, title, text)
+        self.parser.link(link, title, text)
 
     def parse_double_emphasis(self, m):
         text = m.group(2) or m.group(1)
         # text = self.output(text)
-        # return self.renderer.double_emphasis(text)
+        self.parser.double_emphasis(text)
 
     def parse_emphasis(self, m):
         text = m.group(2) or m.group(1)
         # text = self.output(text)
-        # return self.renderer.emphasis(text)
+        self.parser.emphasis(text)
 
     def parse_code(self, m):
         text = m.group(2)
-        # return self.renderer.codespan(text)
+        self.parser.codespan(text)
 
     def parse_linebreak(self, m):
-        # return self.renderer.linebreak()
-        pass
+        self.parser.linebreak()
 
     def parse_strikethrough(self, m):
         # text = self.output(m.group(1))
         text = m.group(1)
-        # return self.renderer.strikethrough(text)
+        self.parser.strikethrough(text)
 
     def parse_text(self, m):
         text = m.group(0)
-        # return self.renderer.text(text)
+        self.parser.text(text)
+
+
+class BaseInlineParser(object):
+    def autolink(self, link, is_email=False):
+        print("autolink", link, is_email)
+
+    def codespan(self, text):
+        print("codespan", text)
+
+    def double_emphasis(self, text):
+        print('double_emphasis', text)
+
+    def emphasis(self, text):
+        print('emphasis', text)
+
+    def image(self, src, title, alt_text):
+        print('image', src, title, alt_text)
+
+    def linebreak(self):
+        print('linebreak')
+
+    def link(self, link, title, content):
+        print('link', link, title, content)
+
+    def tag(self, html):
+        print('tag', html)
+
+    def strikethrough(self, text):
+        print('strikethrough', text)
+
+    def text(self, text):
+        print('text', text)
+
 
 if __name__ == '__main__':
-    lexer = InlineLexer()
+    parser = BaseInlineParser()
+
+    lexer = InlineLexer(parser)
     lexer.read("**Hello** *world*, how are you?")
