@@ -97,6 +97,7 @@ def _get_paragraph_style(level, ordered=None):
     else:
         return ValueError("level", level)
 
+
 class ODFDocument(object):
     def __init__(self, path, template_path, overwrite=False):
         if op.exists(path):
@@ -107,8 +108,9 @@ class ODFDocument(object):
         self._path = path
         self._styles = _packt_styles(template_path)
         self._doc = OpenDocumentText()
-        _add_styles(self._doc, self._styles)
+        self._ordered = False
 
+        _add_styles(self._doc, self._styles)
         _add_numbered_style(self._doc)
 
         self._containers = []
@@ -116,6 +118,11 @@ class ODFDocument(object):
     def clear(self):
         for child in self._doc.text.childNodes:
             self._doc.text.removeChild(child)
+
+    @property
+    def item_level(self):
+        return len([c for c in self._containers
+                   if 'list-item' in c.tagName])
 
     def add_heading(self, text, level):
         assert level in range(1, 7)
@@ -125,8 +132,6 @@ class ODFDocument(object):
         self._doc.text.addElement(h)
 
     def start_container(self, cls, **kwargs):
-        if 'stylename' in kwargs:
-            kwargs['stylename'] = (kwargs['stylename'])
         container = cls(**kwargs)
         self._containers.append(container)
 
@@ -144,29 +149,68 @@ class ODFDocument(object):
         yield
         self.end_container()
 
-    def paragraph(self, style=None, ordered=False):
+    def start_paragraph(self, style=None):
         if style is None:
-            style = _get_paragraph_style(self.item_level, ordered)
-        style = (style)
-        return self.container(P, stylename=style)
+            style = _get_paragraph_style(self.item_level, self._ordered)
+        self.start_container(P, stylename=style)
 
-    @property
-    def item_level(self):
-        return len([c for c in self._containers
-                   if 'list-item' in c.tagName])
+    def end_paragraph(self):
+        self.end_container()
 
-    def list(self, **kwargs):
-        return self.container(List, **kwargs)
+    @contextmanager
+    def paragraph(self, style=None):
+        self.start_paragraph(style=style)
+        yield
+        self.end_container()
 
-    def list_item(self):
-        return self.container(ListItem)
+    def start_numbered_list(self):
+        self._ordered = True
+        self.start_container(List, stylename='numbered')
 
-    def add_text(self, text, style='Normal'):
+    def end_numbered_list(self):
+        self.end_container()
+        self._ordered = None
+
+    def start_list(self):
+        self._ordered = False
+        self.start_container(List)
+
+    def end_list(self):
+        self.end_container()
+
+    def start_list_item(self):
+        self.start_container(ListItem)
+
+    def end_list_item(self):
+        self.end_container()
+
+    def code(self, text):
+        with self.paragraph(style='Code'):
+            self.text(text)
+
+    def start_quote(self):
+        self.start_paragraph(style='Quote')
+
+    def quote(self, text):
+        with self.paragraph(style='Quote'):
+            self.text(text)
+
+    def text(self, text, style='Normal'):
         assert self._containers
         container = self._containers[-1]
-        # style = self._styles[style]
-        style = (style)
         container.addElement(Span(stylename=style, text=text))
+
+    def link(self, url):
+        self.text(url, style='URL')
+
+    def bold(self, text):
+        self.text(text, style='Bold')
+
+    def inline_code(self, text):
+        self.text(text, style='Code In Text')
+
+    def italics(self, text):
+        self.text(text, style='Italics')
 
     @property
     def styles(self):
