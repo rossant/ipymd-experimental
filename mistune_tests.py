@@ -1,6 +1,19 @@
+# -*- coding: utf-8 -*-
+
+"""Markdown parsers."""
+
+
+# -----------------------------------------------------------------------------
+# Imports
+# -----------------------------------------------------------------------------
+
 import re
 import inspect
 
+
+# -----------------------------------------------------------------------------
+# Utils
+# -----------------------------------------------------------------------------
 
 def _pure_pattern(regex):
     pattern = regex.pattern
@@ -16,36 +29,9 @@ def _keyify(key):
     return _key_pattern.sub(' ', key.lower())
 
 
-_escape_pattern = re.compile(r'&(?!#?\w+;)')
-
-
-def escape(text, quote=False, smart_amp=True):
-    """Replace special characters "&", "<" and ">" to HTML-safe sequences.
-    The original cgi.escape will always escape "&", but you can control
-    this one for a smart escape amp.
-    :param quote: if set to True, " and ' will be escaped.
-    :param smart_amp: if set to False, & will always be escaped.
-    """
-    if smart_amp:
-        text = _escape_pattern.sub('&amp;', text)
-    else:
-        text = text.replace('&', '&amp;')
-    text = text.replace('<', '&lt;')
-    text = text.replace('>', '&gt;')
-    if quote:
-        text = text.replace('"', '&quot;')
-        text = text.replace("'", '&#39;')
-    return text
-
-
-def preprocessing(text, tab=4):
-    text = re.sub(r'\r\n|\r', '\n', text)
-    text = text.replace('\t', ' ' * tab)
-    text = text.replace('\u00a0', ' ')
-    text = text.replace('\u2424', '\n')
-    pattern = re.compile(r'^ +$', re.M)
-    return pattern.sub('', text)
-
+# -----------------------------------------------------------------------------
+# Block parser
+# -----------------------------------------------------------------------------
 
 _tag = (
     r'(?!(?:'
@@ -403,9 +389,6 @@ class BaseBlockParser(object):
     def newline(self, ):
         print('newline', )
 
-    def paragraph(self, text):
-        print('paragraph', text)
-
     def table(self, item):
         print('table', item)
 
@@ -414,6 +397,9 @@ class BaseBlockParser(object):
 
     def code(self, code, lang=None):
         print('code', code, lang)
+
+    def paragraph(self, text):
+        print('paragraph', text)
 
     def text(self, text):
         print('text', text)
@@ -594,18 +580,18 @@ class InlineLexer(object):
             self.parser.image(link, title, text)
             return
         # self._in_link = True
-        # text = self.output(text)
+        # NOTE: could recurse here with text
         self._in_link = False
         self.parser.link(link, title, text)
 
     def parse_double_emphasis(self, m):
         text = m.group(2) or m.group(1)
-        # text = self.output(text)
+        # NOTE: could recurse here with text
         self.parser.double_emphasis(text)
 
     def parse_emphasis(self, m):
         text = m.group(2) or m.group(1)
-        # text = self.output(text)
+        # NOTE: could recurse here with text
         self.parser.emphasis(text)
 
     def parse_code(self, m):
@@ -616,8 +602,8 @@ class InlineLexer(object):
         self.parser.linebreak()
 
     def parse_strikethrough(self, m):
-        # text = self.output(m.group(1))
         text = m.group(1)
+        # NOTE: could recurse here with text
         self.parser.strikethrough(text)
 
     def parse_text(self, m):
@@ -672,8 +658,8 @@ New paragraph.
 
 Here is a list:
 
-* first item
-* second item
+* first item, see the link at http://google.com.
+* second *item* in italics.
 
 Here is a numbered list:
 1. first item
