@@ -1,6 +1,4 @@
-from opendocument import (ODFDocument, List, ListItem,
-                          ListStyle, ListLevelStyleNumber,
-                          ListLevelProperties)
+from opendocument import (ODFDocument, List, ListItem)
 from markdown_utils import (BlockLexer, BaseBlockRenderer,
                             InlineLexer, BaseInlineRenderer)
 
@@ -30,21 +28,7 @@ class ODFBlockRenderer(BaseBlockRenderer):
         self._in_ordered_list = ordered
 
         if ordered:
-            style = ListStyle(name='Numbered Bullet [PACKT]')
-
-            lls = ListLevelStyleNumber(level=1)
-
-            lls.setAttribute('displaylevels', 1)
-            lls.setAttribute('numsuffix', '@@@@')
-            lls.setAttribute('numformat', '1')
-
-            # llp = ListLevelProperties()
-            # llp.setAttribute('spacebefore', '10px')
-            # llp.setAttribute('minlabelwidth', '30px')
-            # lls.addElement(llp)
-
-            style.addElement(lls)
-
+            style = 'numbered'
         else:
             style = None
 
@@ -52,6 +36,7 @@ class ODFBlockRenderer(BaseBlockRenderer):
 
     def list_end(self):
         self._doc.end_container()
+        self._in_ordered_list = None
 
     def list_item_start(self):
         self._doc.start_container(ListItem)
@@ -142,6 +127,7 @@ block_lexer = BlockLexer(block_renderer)
 
 block_lexer.read(text)
 
+# doc.show()
 doc.save()
 
 
