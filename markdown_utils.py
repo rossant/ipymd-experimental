@@ -25,20 +25,6 @@ import inspect
 # Utils
 # -----------------------------------------------------------------------------
 
-def _pure_pattern(regex):
-    pattern = regex.pattern
-    if pattern.startswith('^'):
-        pattern = pattern[1:]
-    return pattern
-
-
-_key_pattern = re.compile(r'\s+')
-
-
-def _keyify(key):
-    return _key_pattern.sub(' ', key.lower())
-
-
 class BaseLexer(object):
     grammar_class = None
     default_rules = []
@@ -86,6 +72,20 @@ class BaseLexer(object):
 # -----------------------------------------------------------------------------
 # Block renderer
 # -----------------------------------------------------------------------------
+
+def _pure_pattern(regex):
+    pattern = regex.pattern
+    if pattern.startswith('^'):
+        pattern = pattern[1:]
+    return pattern
+
+
+_key_pattern = re.compile(r'\s+')
+
+
+def _keyify(key):
+    return _key_pattern.sub(' ', key.lower())
+
 
 _tag = (
     r'(?!(?:'
