@@ -5,8 +5,7 @@ from ipymd.lib.markdown import InlineLexer, BlockLexer, BaseRenderer
 def packt_styles(path):
     styles = load_styles(path)
     return {name: style for name, style in styles.items()
-            if '[PACKT]' in name
-            or 'Heading' in name}
+            if '[PACKT]' in name or 'Heading' in name}
 
 
 def _get_paragraph_style(level, ordered=None):
@@ -35,7 +34,7 @@ class PacktODFDocument(ODFDocument):
                      'code': 'Code [PACKT]',
                      'quote': 'Quote [PACKT]',
                      'italic': 'Italics [PACKT]',
-                     'bold': 'Bold [PACKT]',
+                     'bold': 'Bold [PACKT]',
                      'url': 'URL [PACKT]',
                      'inline-code': 'Code In Text [PACKT]',
                      }
