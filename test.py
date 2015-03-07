@@ -70,7 +70,7 @@ class ODFInlineRenderer(BaseInlineRenderer):
         pass
 
     def linebreak(self):
-        print("line break")
+        self._doc.linebreak()
 
     def link(self, link, title, content):
         self._doc.text(content + ' (')
@@ -83,14 +83,19 @@ class ODFInlineRenderer(BaseInlineRenderer):
 
 text = """# Chapter 1
 
-**Hello** *world*, how are you? Good and you.
+**Hello** *world*, how are you?
+Good and you.
 
 New paragraph.
+
+## Subsection
 
 Here is a list:
 
 * first item, see the link at http://google.com.
 * second *item* in italics.
+
+### Subsubsection
 
 Here is a numbered list:
 1. first **item**
@@ -102,8 +107,6 @@ Go to [this link](http://hello.com), it is very good!
 >>> print("hello world")
 hello world
 ```
-
-TODO: line break within code
 
 ```python
 >>> print("hello world")
@@ -119,6 +122,10 @@ console.log();
     code again
 
 """
+
+# TODO: TIP and INFO box
+# TODO: modular architecture, refactor with existing markdown, integrate into ipymd, split specific packt code
+
 
 doc_path = 'test.odt'
 template_path = 'styles.ott'

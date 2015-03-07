@@ -6,7 +6,7 @@ from pprint import pprint
 from odf.opendocument import OpenDocumentText, load
 from odf.style import (Style, TextProperties, ListLevelProperties,
                        ListLevelLabelAlignment)
-from odf.text import (H, P, Span, List, ListItem,
+from odf.text import (H, P, Span, LineBreak, List, ListItem,
                       ListStyle, ListLevelStyleNumber,
                       )
 
@@ -196,17 +196,21 @@ class ODFDocument(object):
 
     def code(self, text):
         with self.paragraph(style='Code [PACKT]'):
-            self.text(text)
+            lines = text.splitlines()
+            for line in lines[:-1]:
+                self.text(line)
+                self.linebreak()
+            self.text(lines[-1])
+
+    def linebreak(self):
+        container = self._containers[-1]
+        container.addElement(LineBreak())
 
     def start_quote(self):
         self.start_paragraph(style='Quote [PACKT]')
 
     def end_quote(self):
         self.end_container()
-
-    # def quote(self, text):
-    #     with self.paragraph(style='Quote [PACKT]'):
-    #         self.text(text)
 
     def text(self, text, style='Normal [PACKT]'):
         assert self._containers

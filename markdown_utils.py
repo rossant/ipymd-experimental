@@ -152,6 +152,10 @@ class BlockLexer(object):
     )
 
     def __init__(self, renderer=None, rules=None, **kwargs):
+
+        if renderer is None:
+            renderer = BaseBlockRenderer(verbose=True)
+
         self.renderer = renderer
         self.def_links = {}
         self.def_footnotes = {}
@@ -360,77 +364,80 @@ class BlockLexer(object):
 
 
 class BaseBlockRenderer(object):
+    def __init__(self, verbose=False):
+        self._verbose = verbose
+
     def block_html(self, text, pre=None):
-        # print('block_html', text, pre)
-        pass
+        if self._verbose:
+            print('block_html', text, pre)
 
     def block_quote_start(self):
-        # print('block_quote_start', )
-        pass
+        if self._verbose:
+            print('block_quote_start', )
 
     def block_quote_end(self):
-        # print('block_quote_end', )
-        pass
+        if self._verbose:
+            print('block_quote_end', )
 
     def footnote_start(self, key):
-        # print('footnote_start', key)
-        pass
+        if self._verbose:
+            print('footnote_start', key)
 
     def footnote_end(self, key):
-        # print('footnote_end', key)
-        pass
+        if self._verbose:
+            print('footnote_end', key)
 
     def heading(self, text, level=None):
-        # print('heading', text, level)
-        pass
+        if self._verbose:
+            print('heading', text, level)
 
     def hrule(self):
-        # print('hrule', )
-        pass
+        if self._verbose:
+            print('hrule', )
 
     def list_start(self, ordered=False):
-        # print('list_start', ordered)
-        pass
+        if self._verbose:
+            print('list_start', ordered)
 
     def list_end(self):
-        # print('list_end', )
-        pass
+        if self._verbose:
+            print('list_end', )
 
     def list_item_start(self):
-        # print('list_item_start', )
-        pass
+        if self._verbose:
+            print('list_item_start', )
 
     def loose_item_start(self):
-        # print('loose_item_start', )
-        pass
+        if self._verbose:
+            print('loose_item_start', )
 
     def list_item_end(self):
-        # print('list_item_end', )
-        pass
+        if self._verbose:
+            print('list_item_end', )
 
     def newline(self):
-        # print('newline', )
-        pass
+        if self._verbose:
+            print('newline', )
 
     def table(self, item):
-        # print('table', item)
-        pass
+        if self._verbose:
+            print('table', item)
 
     def nptable(self, item):
-        # print('nptable', item)
-        pass
+        if self._verbose:
+            print('nptable', item)
 
     def code(self, code, lang=None):
-        # print('code', code, lang)
-        pass
+        if self._verbose:
+            print('code', code, lang)
 
     def paragraph(self, text):
-        # print('paragraph', text)
-        pass
+        if self._verbose:
+            print('paragraph', text)
 
     def text(self, text):
-        # print('text', text)
-        pass
+        if self._verbose:
+            print('text', text)
 
 
 # -----------------------------------------------------------------------------
@@ -476,6 +483,7 @@ class InlineGrammar(object):
     strikethrough = re.compile(r'^~~(?=\S)(.*?\S)~~')  # ~~word~~
     footnote = re.compile(r'^\[\^([^\]]+)\]')
     text = re.compile(r'^[\s\S]+?(?=[\\<!\[_*`~]|https?://| {2,}\n|$)')
+    # newline = re.compile(r'^\n+')
 
     def hard_wrap(self):
         """Grammar for hard wrap linebreak. You don't need to add two
@@ -485,6 +493,9 @@ class InlineGrammar(object):
         self.text = re.compile(
             r'^[\s\S]+?(?=[\\<!\[_*`~]|https?://| *\n|$)'
         )
+
+    def __init__(self):
+        self.hard_wrap()
 
 
 class InlineLexer(object):
@@ -498,10 +509,12 @@ class InlineLexer(object):
         'linebreak', 'strikethrough', 'text',
     ]
 
-    def __init__(self, renderer, rules=None, **kwargs):
+    def __init__(self, renderer=None, rules=None, **kwargs):
         self.links = {}
         self.footnotes = {}
         self.footnote_index = 0
+        if renderer is None:
+            renderer = BaseInlineRenderer(verbose=True)
         self.renderer = renderer
 
         if not rules:
@@ -640,42 +653,45 @@ class InlineLexer(object):
 
 
 class BaseInlineRenderer(object):
+    def __init__(self, verbose=False):
+        self._verbose = verbose
+
     def autolink(self, link, is_email=False):
-        # print("autolink", link, is_email)
-        pass
+        if self._verbose:
+            print("autolink", link, is_email)
 
     def codespan(self, text):
-        # print("codespan", text)
-        pass
+        if self._verbose:
+            print("codespan", text)
 
     def double_emphasis(self, text):
-        # print('double_emphasis', text)
-        pass
+        if self._verbose:
+            print('double_emphasis', text)
 
     def emphasis(self, text):
-        # print('emphasis', text)
-        pass
+        if self._verbose:
+            print('emphasis', text)
 
     def image(self, src, title, alt_text):
-        # print('image', src, title, alt_text)
-        pass
+        if self._verbose:
+            print('image', src, title, alt_text)
 
     def linebreak(self):
-        # print('linebreak')
-        pass
+        if self._verbose:
+            print('linebreak')
 
     def link(self, link, title, content):
-        # print('link', link, title, content)
-        pass
+        if self._verbose:
+            print('link', link, title, content)
 
     def tag(self, html):
-        # print('tag', html)
-        pass
+        if self._verbose:
+            print('tag', html)
 
     def strikethrough(self, text):
-        # print('strikethrough', text)
-        pass
+        if self._verbose:
+            print('strikethrough', text)
 
     def text(self, text):
-        # print('text', text)
-        pass
+        if self._verbose:
+            print('text', text)
