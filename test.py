@@ -105,6 +105,7 @@ class ODFRenderer(BaseRenderer):
         self._doc.heading(text, level)
 
     def list_start(self, ordered=False):
+
         # HACK: cancel the newly-created paragraph after the list item.
         if self._paragraph_created_after_item_start:
             self._doc.end_container(cancel=True)
@@ -137,7 +138,7 @@ class ODFRenderer(BaseRenderer):
             self._doc.end_paragraph()
             self._paragraph_created_after_item_start = False
 
-    def code(self, code, lang=None):
+    def block_code(self, code, lang=None):
         self._doc.code(code)
 
 
