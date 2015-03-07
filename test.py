@@ -133,10 +133,10 @@ template_path = 'styles.ott'
 doc = ODFDocument(doc_path, template_path, overwrite=True)
 
 inline_renderer = ODFInlineRenderer(doc)
-inline_lexer = InlineLexer(inline_renderer)
+inline_lexer = InlineLexer(renderer=inline_renderer)
 
 block_renderer = ODFBlockRenderer(doc, inline_lexer)
-block_lexer = BlockLexer(block_renderer)
+block_lexer = BlockLexer(renderer=block_renderer)
 
 block_lexer.read(text)
 
