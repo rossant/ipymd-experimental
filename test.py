@@ -40,10 +40,7 @@ hello world
 console.log();
 ```
 
-> TIP (Some text): This is cool!
-
-    code again
-
+TIP (Some text): TODO: Test quotes.
 """
 
 
@@ -86,6 +83,7 @@ class ODFRenderer(BaseRenderer):
     def __init__(self, doc):
         super(ODFRenderer, self).__init__()
         self._doc = doc
+        self._paragraph_created_after_item_start = False
 
     def text(self, text):
         inline_renderer = ODFInlineRenderer(self._doc)
@@ -109,6 +107,11 @@ class ODFRenderer(BaseRenderer):
         self._doc.heading(text, level)
 
     def list_start(self, ordered=False):
+        # HACK: cancel the newly-created paragraph after the list item.
+        if self._paragraph_created_after_item_start:
+            self._doc.end_container(cancel=True)
+            self._paragraph_created_after_item_start = False
+
         if ordered:
             self._doc.start_numbered_list()
         else:
@@ -119,19 +122,25 @@ class ODFRenderer(BaseRenderer):
 
     def list_item_start(self):
         self._doc.start_list_item()
-        # self._doc.start_paragraph()
+        self._doc.start_paragraph()
+        self._paragraph_created_after_item_start = True
 
     def loose_item_start(self):
         self._doc.start_list_item()
-        # self._doc.start_paragraph()
+        self._doc.start_paragraph()
+        self._paragraph_created_after_item_start = True
 
     def list_item_end(self):
-        # self._doc.end_paragraph()
         self._doc.end_list_item()
+
+        # HACK: validate the automatically-created paragraph at the end
+        # of the list item.
+        if self._paragraph_created_after_item_start:
+            self._doc.end_paragraph()
+            self._paragraph_created_after_item_start = False
 
     def code(self, code, lang=None):
         self._doc.code(code)
-
 
 
 # TODO: TIP and INFO box
@@ -143,60 +152,14 @@ template_path = 'styles.ott'
 doc = ODFDocument(doc_path, template_path, overwrite=True)
 
 
-
-inline_renderer = ODFInlineRenderer(doc)
-inline_lexer = InlineLexer(renderer=inline_renderer)
-with doc.paragraph():
-    inline_lexer.read("Hello world!")
-
+# inline_renderer = ODFInlineRenderer(doc)
+# inline_lexer = InlineLexer(renderer=inline_renderer)
+# with doc.paragraph():
+#     inline_lexer.read("Hello world!")
 
 
-
-# renderer = ODFRenderer(doc)
-# block_lexer = BlockLexer(renderer=renderer)
-# block_lexer.read(text)
+renderer = ODFRenderer(doc)
+block_lexer = BlockLexer(renderer=renderer)
+block_lexer.read(text)
 
 doc.save()
-
-
-
-
-
-
-
-
-
-
-
-
-# doc.heading("The title", 1)
-
-# with doc.paragraph():
-#     doc.text("Some text. ", 'Normal')
-#     doc.text("This is bold. ", 'Bold')
-
-# with doc.list():
-#     with doc.list_item():
-#         with doc.paragraph():
-#             doc.text("Item 1.")
-#     with doc.list_item():
-#         with doc.paragraph():
-#             doc.text("Item 2.")
-#         with doc.list():
-#             with doc.list_item():
-#                 with doc.paragraph():
-#                     doc.text("Item 2.1. This is ")
-#                     doc.text("code", "Code In Text")
-#                     doc.text(". Oh, and here is a link: ")
-#                     doc.text("http://google.com", 'URL')
-#                     doc.text(".")
-#     with doc.list_item():
-#         with doc.paragraph():
-#             doc.text("Item 3.")
-
-# with doc.paragraph():
-#     doc.text("Some text. ", 'Normal')
-
-# with doc.paragraph('Code'):
-#     doc.text("print('Hello world!')")
-

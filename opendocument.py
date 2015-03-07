@@ -140,7 +140,7 @@ class ODFDocument(object):
         container = cls(**kwargs)
         self._containers.append(container)
 
-    def end_container(self):
+    def end_container(self, cancel=False):
         if not self._containers:
             return
         container = self._containers.pop()
@@ -148,7 +148,8 @@ class ODFDocument(object):
             parent = self._containers[-1]
         else:
             parent = self._doc.text
-        parent.addElement(container)
+        if not cancel:
+            parent.addElement(container)
 
     @contextmanager
     def container(self, cls, **kwargs):
@@ -234,7 +235,7 @@ class ODFDocument(object):
         self.start_paragraph(style='Quote [PACKT]')
 
     def end_quote(self):
-        self.end_container()
+        self.end_paragraph()
 
     def text(self, text, style='Normal [PACKT]'):
         assert self._containers
