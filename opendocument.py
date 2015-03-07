@@ -110,6 +110,7 @@ class ODFDocument(object):
                 os.remove(path)
             else:
                 raise IOError("The file does already exist, use overwrite=True.")
+        self._next_p_style = None
         self._path = path
         self._styles = _packt_styles(template_path)
         self._doc = OpenDocumentText()
@@ -159,6 +160,9 @@ class ODFDocument(object):
 
     def start_paragraph(self, style=None):
         """Start the paragraph only if necessary."""
+        if self._next_p_style is not None:
+            style = self._next_p_style
+            self._next_p_style = None
         if style is None:
             style = _get_paragraph_style(self.item_level, self._ordered)
         self.start_container(P, stylename=style)
@@ -232,10 +236,10 @@ class ODFDocument(object):
         container.addElement(LineBreak())
 
     def start_quote(self):
-        self.start_paragraph(style='Quote [PACKT]')
+        self._next_p_style = 'Quote [PACKT]'
 
     def end_quote(self):
-        self.end_paragraph()
+        self._next_p_style = None
 
     def text(self, text, style='Normal [PACKT]'):
         assert self._containers

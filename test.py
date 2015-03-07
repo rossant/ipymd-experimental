@@ -40,10 +40,8 @@ hello world
 console.log();
 ```
 
-TIP (Some text): TODO: Test quotes.
+> TIP (Title): Some tip.
 """
-
-
 
 
 class ODFInlineRenderer(BaseRenderer):
@@ -150,13 +148,6 @@ doc_path = 'test.odt'
 template_path = 'styles.ott'
 
 doc = ODFDocument(doc_path, template_path, overwrite=True)
-
-
-# inline_renderer = ODFInlineRenderer(doc)
-# inline_lexer = InlineLexer(renderer=inline_renderer)
-# with doc.paragraph():
-#     inline_lexer.read("Hello world!")
-
 
 renderer = ODFRenderer(doc)
 block_lexer = BlockLexer(renderer=renderer)
