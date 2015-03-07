@@ -194,6 +194,24 @@ class ODFDocument(object):
     def end_list(self):
         self.end_container()
 
+    @contextmanager
+    def list(self):
+        self.start_list()
+        yield
+        self.end_list()
+
+    @contextmanager
+    def numbered_list(self):
+        self.start_numbered_list()
+        yield
+        self.end_numbered_list()
+
+    @contextmanager
+    def list_item(self):
+        self.start_list_item()
+        yield
+        self.end_list_item()
+
     def start_list_item(self):
         self.start_container(ListItem)
 

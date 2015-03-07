@@ -2,6 +2,53 @@ from opendocument import ODFDocument
 from ipymd.lib.markdown import InlineLexer, BlockLexer, BaseRenderer
 
 
+
+
+text = """# Chapter 1
+
+**Hello** *world*, how are you?
+Good and you.
+
+New paragraph.
+
+## Subsection
+
+Here is a list:
+
+* first item, see the link at http://google.com.
+* second *item* in italics.
+
+### Subsubsection
+
+Here is a numbered list:
+1. first **item**
+2. second item
+
+Go to [this link](http://hello.com), it is very good!
+
+```
+>>> print("hello world")
+hello world
+```
+
+```python
+>>> print("hello world")
+hello world
+```
+
+```javascript
+console.log();
+```
+
+> TIP (Some text): This is cool!
+
+    code again
+
+"""
+
+
+
+
 class ODFInlineRenderer(BaseRenderer):
     def __init__(self, doc):
         super(ODFInlineRenderer, self).__init__()
@@ -97,59 +144,59 @@ doc = ODFDocument(doc_path, template_path, overwrite=True)
 
 
 
-# inline_renderer = ODFInlineRenderer(doc)
-# inline_lexer = InlineLexer(renderer=inline_renderer)
-# with doc.paragraph():
-#     inline_lexer.read("Hello world!")
+inline_renderer = ODFInlineRenderer(doc)
+inline_lexer = InlineLexer(renderer=inline_renderer)
+with doc.paragraph():
+    inline_lexer.read("Hello world!")
 
 
 
 
-
-text = """# Chapter 1
-
-**Hello** *world*, how are you?
-Good and you.
-
-New paragraph.
-
-## Subsection
-
-Here is a list:
-
-* first item, see the link at http://google.com.
-* second *item* in italics.
-
-### Subsubsection
-
-Here is a numbered list:
-1. first **item**
-2. second item
-
-Go to [this link](http://hello.com), it is very good!
-
-```
->>> print("hello world")
-hello world
-```
-
-```python
->>> print("hello world")
-hello world
-```
-
-```javascript
-console.log();
-```
-
-> TIP (Some text): This is cool!
-
-    code again
-
-"""
-
-renderer = ODFRenderer(doc)
-block_lexer = BlockLexer(renderer=renderer)
-block_lexer.read(text)
+# renderer = ODFRenderer(doc)
+# block_lexer = BlockLexer(renderer=renderer)
+# block_lexer.read(text)
 
 doc.save()
+
+
+
+
+
+
+
+
+
+
+
+
+# doc.heading("The title", 1)
+
+# with doc.paragraph():
+#     doc.text("Some text. ", 'Normal')
+#     doc.text("This is bold. ", 'Bold')
+
+# with doc.list():
+#     with doc.list_item():
+#         with doc.paragraph():
+#             doc.text("Item 1.")
+#     with doc.list_item():
+#         with doc.paragraph():
+#             doc.text("Item 2.")
+#         with doc.list():
+#             with doc.list_item():
+#                 with doc.paragraph():
+#                     doc.text("Item 2.1. This is ")
+#                     doc.text("code", "Code In Text")
+#                     doc.text(". Oh, and here is a link: ")
+#                     doc.text("http://google.com", 'URL')
+#                     doc.text(".")
+#     with doc.list_item():
+#         with doc.paragraph():
+#             doc.text("Item 3.")
+
+# with doc.paragraph():
+#     doc.text("Some text. ", 'Normal')
+
+# with doc.paragraph('Code'):
+#     doc.text("print('Hello world!')")
+
