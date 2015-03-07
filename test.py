@@ -1,57 +1,14 @@
 from opendocument import ODFDocument
-from markdown_utils import (BlockLexer, BaseBlockRenderer,
-                            InlineLexer, BaseInlineRenderer)
+from ipymd.lib.markdown import InlineLexer, BlockLexer, BaseRenderer
 
 
-class ODFBlockRenderer(BaseBlockRenderer):
-    def __init__(self, doc, inline_lexer=None):
+class ODFInlineRenderer(BaseRenderer):
+    def __init__(self, doc):
+        super(ODFInlineRenderer, self).__init__()
         self._doc = doc
-        self._inline_lexer = inline_lexer
-
-    def block_html(self, text, pre=None):
-        self.paragraph(text)
-
-    def block_quote_start(self):
-        self._doc.start_quote()
-
-    def block_quote_end(self):
-        self._doc.end_quote()
-
-    def heading(self, text, level=None):
-        self._doc.heading(text, level)
-
-    def list_start(self, ordered=False):
-        if ordered:
-            self._doc.start_numbered_list()
-        else:
-            self._doc.start_list()
-
-    def list_end(self):
-        self._doc.end_list()
-
-    def list_item_start(self):
-        self._doc.start_list_item()
-
-    def loose_item_start(self):
-        self._doc.start_list_item()
-
-    def list_item_end(self):
-        self._doc.end_list_item()
-
-    def code(self, code, lang=None):
-        self._doc.code(code)
-
-    def paragraph(self, text):
-        self.text(text)
 
     def text(self, text):
-        with self._doc.paragraph():
-            self._inline_lexer.read(text)
-
-
-class ODFInlineRenderer(BaseInlineRenderer):
-    def __init__(self, doc):
-        self._doc = doc
+        self._doc.text(text)
 
     def autolink(self, link, is_email=False):
         self._doc.link(link)
@@ -77,8 +34,76 @@ class ODFInlineRenderer(BaseInlineRenderer):
         self._doc.link(link)
         self._doc.text(')')
 
+
+class ODFRenderer(BaseRenderer):
+    def __init__(self, doc):
+        super(ODFRenderer, self).__init__()
+        self._doc = doc
+
     def text(self, text):
-        self._doc.text(text)
+        inline_renderer = ODFInlineRenderer(self._doc)
+        inline_lexer = InlineLexer(renderer=inline_renderer)
+        inline_lexer.read(text)
+
+    def paragraph(self, text):
+        with self._doc.paragraph():
+            self.text(text)
+
+    def block_html(self, text, pre=None):
+        self.paragraph(text)
+
+    def block_quote_start(self):
+        self._doc.start_quote()
+
+    def block_quote_end(self):
+        self._doc.end_quote()
+
+    def heading(self, text, level=None):
+        self._doc.heading(text, level)
+
+    def list_start(self, ordered=False):
+        if ordered:
+            self._doc.start_numbered_list()
+        else:
+            self._doc.start_list()
+
+    def list_end(self):
+        self._doc.end_list()
+
+    def list_item_start(self):
+        self._doc.start_list_item()
+        # self._doc.start_paragraph()
+
+    def loose_item_start(self):
+        self._doc.start_list_item()
+        # self._doc.start_paragraph()
+
+    def list_item_end(self):
+        # self._doc.end_paragraph()
+        self._doc.end_list_item()
+
+    def code(self, code, lang=None):
+        self._doc.code(code)
+
+
+
+# TODO: TIP and INFO box
+# TODO: integrate into ipymd, split specific packt code
+
+doc_path = 'test.odt'
+template_path = 'styles.ott'
+
+doc = ODFDocument(doc_path, template_path, overwrite=True)
+
+
+
+# inline_renderer = ODFInlineRenderer(doc)
+# inline_lexer = InlineLexer(renderer=inline_renderer)
+# with doc.paragraph():
+#     inline_lexer.read("Hello world!")
+
+
+
 
 
 text = """# Chapter 1
@@ -123,21 +148,8 @@ console.log();
 
 """
 
-# TODO: TIP and INFO box
-# TODO: modular architecture, refactor with existing markdown, integrate into ipymd, split specific packt code
-
-
-doc_path = 'test.odt'
-template_path = 'styles.ott'
-
-doc = ODFDocument(doc_path, template_path, overwrite=True)
-
-inline_renderer = ODFInlineRenderer(doc)
-inline_lexer = InlineLexer(renderer=inline_renderer)
-
-block_renderer = ODFBlockRenderer(doc, inline_lexer)
-block_lexer = BlockLexer(renderer=block_renderer)
-
+renderer = ODFRenderer(doc)
+block_lexer = BlockLexer(renderer=renderer)
 block_lexer.read(text)
 
 doc.save()

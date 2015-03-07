@@ -141,6 +141,8 @@ class ODFDocument(object):
         self._containers.append(container)
 
     def end_container(self):
+        if not self._containers:
+            return
         container = self._containers.pop()
         if len(self._containers) >= 1:
             parent = self._containers[-1]
@@ -155,6 +157,7 @@ class ODFDocument(object):
         self.end_container()
 
     def start_paragraph(self, style=None):
+        """Start the paragraph only if necessary."""
         if style is None:
             style = _get_paragraph_style(self.item_level, self._ordered)
         self.start_container(P, stylename=style)
@@ -162,16 +165,19 @@ class ODFDocument(object):
     def end_paragraph(self):
         self.end_container()
 
+    def require_paragraph(self):
+        """Create a paragraph container if needed."""
+        if self._containers and _is_paragraph(self._containers[-1]):
+            return False
+        else:
+            self.start_paragraph()
+            return True
+
     @contextmanager
     def paragraph(self, style=None):
-        # Do not create a new paragraph if there is already one active.
-        if self._containers and _is_paragraph(self._containers[-1]):
-            yield
-        # Create a new paragraph if needed.
-        else:
-            self.start_paragraph(style=style)
-            yield
-            self.end_container()
+        self.start_paragraph(style=style)
+        yield
+        self.end_paragraph()
 
     def start_numbered_list(self):
         self._ordered = True
