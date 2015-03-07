@@ -255,7 +255,7 @@ class ODFDocument(object):
     def inline_code(self, text):
         self.text(text, style='Code In Text [PACKT]')
 
-    def italics(self, text):
+    def italic(self, text):
         self.text(text, style='Italics [PACKT]')
 
     @property
