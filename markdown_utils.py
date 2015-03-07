@@ -151,23 +151,19 @@ class BlockLexer(object):
         'list_block', 'block_html', 'table', 'paragraph', 'text'
     )
 
-    def __init__(self, renderer=None, rules=None, **kwargs):
-
+    def __init__(self, renderer=None, grammar=None, **kwargs):
         if renderer is None:
             renderer = BaseBlockRenderer(verbose=True)
-
         self.renderer = renderer
         self.def_links = {}
         self.def_footnotes = {}
-
-        if not rules:
-            rules = self.grammar_class()
-
-        self.rules = rules
+        if not grammar:
+            grammar = self.grammar_class()
+        self.grammar = grammar
 
     def _manipulate(self, text, rules=None):
         for key in rules:
-            rule = getattr(self.rules, key)
+            rule = getattr(self.grammar, key)
             m = rule.match(text)
             if not m:
                 continue
@@ -222,7 +218,7 @@ class BlockLexer(object):
         self.renderer.list_end()
 
     def _process_list_item(self, cap, bull):
-        cap = self.rules.list_item.findall(cap)
+        cap = self.grammar.list_item.findall(cap)
 
         _next = False
         length = len(cap)
@@ -232,7 +228,7 @@ class BlockLexer(object):
 
             # remove the bullet
             space = len(item)
-            item = self.rules.list_bullet.sub('', item)
+            item = self.grammar.list_bullet.sub('', item)
 
             # outdent
             if '\n ' in item:
@@ -509,7 +505,7 @@ class InlineLexer(object):
         'linebreak', 'strikethrough', 'text',
     ]
 
-    def __init__(self, renderer=None, rules=None, **kwargs):
+    def __init__(self, renderer=None, grammar=None, **kwargs):
         self.links = {}
         self.footnotes = {}
         self.footnote_index = 0
@@ -517,10 +513,10 @@ class InlineLexer(object):
             renderer = BaseInlineRenderer(verbose=True)
         self.renderer = renderer
 
-        if not rules:
-            rules = self.grammar_class()
+        if not grammar:
+            grammar = self.grammar_class()
 
-        self.rules = rules
+        self.grammar = grammar
 
         self._in_link = False
         self._in_footnote = False
@@ -535,7 +531,7 @@ class InlineLexer(object):
             rules = list(self.default_rules)
 
         for key in rules:
-            pattern = getattr(self.rules, key)
+            pattern = getattr(self.grammar, key)
             m = pattern.match(text)
             if not m:
                 continue
