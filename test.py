@@ -83,11 +83,11 @@ class PacktODFDocument(ODFDocument):
         styles = packt_styles(template_path)
         super(PacktODFDocument, self).__init__(styles)
 
-    def start_paragraph(self, style=None):
+    def start_paragraph(self, stylename=None):
         """Start the paragraph only if necessary."""
-        if style is None:
-            style = _get_paragraph_style(self._item_level, self._ordered)
-        super(PacktODFDocument, self).start_paragraph(style)
+        if stylename is None:
+            stylename = _get_paragraph_style(self._item_level, self._ordered)
+        super(PacktODFDocument, self).start_paragraph(stylename)
 
 
 class ODFInlineRenderer(BaseRenderer):
