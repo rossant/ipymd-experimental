@@ -39,6 +39,39 @@ def _keyify(key):
     return _key_pattern.sub(' ', key.lower())
 
 
+class BaseLexer(object):
+    def __init__(self, grammar, rules):
+        self._grammar = grammar
+        self._rules = rules
+
+    def _manipulate(self, text, rules):
+        for key in rules:
+            rule = getattr(self._grammar, key)
+            m = rule.match(text)
+            if not m:
+                continue
+            getattr(self, 'parse_%s' % key)(m)
+            return m
+        return False
+
+    def preprocess(self, text):
+        """To be overriden."""
+        # TODO
+        return text.rstrip('\n')
+
+    def read(self, text, rules=None):
+        if rules is None:
+            rules = self._rules
+        text = self.preprocess(text)
+        while text:
+            m = self._manipulate(text, rules)
+            if m is not False:
+                text = text[len(m.group(0)):]
+                continue
+            if text:
+                raise RuntimeError('Infinite loop at: %s' % text)
+
+
 # -----------------------------------------------------------------------------
 # Block renderer
 # -----------------------------------------------------------------------------
@@ -129,7 +162,7 @@ class BlockGrammar(object):
     text = re.compile(r'^[^\n]+')
 
 
-class BlockLexer(object):
+class BlockLexer(BaseLexer):
     """Block level lexer for block grammars."""
     grammar_class = BlockGrammar
 
@@ -151,39 +184,14 @@ class BlockLexer(object):
         'list_block', 'block_html', 'table', 'paragraph', 'text'
     )
 
-    def __init__(self, renderer=None, grammar=None, **kwargs):
+    def __init__(self, renderer=None, **kwargs):
+        self.grammar = self.grammar_class()
+        super(BlockLexer, self).__init__(self.grammar, self.default_rules)
         if renderer is None:
             renderer = BaseBlockRenderer(verbose=True)
         self.renderer = renderer
         self.def_links = {}
         self.def_footnotes = {}
-        if not grammar:
-            grammar = self.grammar_class()
-        self.grammar = grammar
-
-    def _manipulate(self, text, rules=None):
-        for key in rules:
-            rule = getattr(self.grammar, key)
-            m = rule.match(text)
-            if not m:
-                continue
-            getattr(self, 'parse_%s' % key)(m)
-            return m
-        return False
-
-    def read(self, text, rules=None):
-        text = text.rstrip('\n')
-
-        if not rules:
-            rules = self.default_rules
-
-        while text:
-            m = self._manipulate(text, rules)
-            if m is not False:
-                text = text[len(m.group(0)):]
-                continue
-            if text:
-                raise RuntimeError('Infinite loop at: %s' % text)
 
     def parse_newline(self, m):
         length = len(m.group(0))
